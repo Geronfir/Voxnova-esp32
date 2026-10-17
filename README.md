@@ -57,6 +57,41 @@ nova-esp32-bridge/
 | **Push-to-Talk** | GPIO18 | Active LOW (Internal Pullup) |
 | **Status LED** | GPIO48 | Onboard WS2812 RGB |
 
+## Requirements
+
+1. **Hardware**:
+   - Board **ESP32-S3 dengan Octal PSRAM** (rekomendasi varian N16R8: Flash 16MB + PSRAM 8MB). Board tanpa PSRAM tidak dapat menampung buffer audio PTT 640KB secara penuh.
+   - Modul mic I2S INMP441 + DAC Amp I2S MAX98357A + Speaker 4Ω/8Ω.
+   - Display OLED I2C SSD1306 (128x64).
+   - Push Button untuk Push-to-Talk (GPIO18 ke GND).
+   - Kabel data USB Type-C untuk flashing awal.
+2. **Software & Toolchain**:
+   - PlatformIO Core / CLI (untuk kompilasi firmware).
+   - Node.js (v18+) & Wrangler CLI (`npm install -g wrangler`) untuk deploy Cloudflare Worker.
+   - Python 3.10+ (opsional, jika memakai server lokal FastAPI).
+3. **Akun & API Key**:
+   - Akun **Cloudflare** aktif (Free Tier mendukung Workers & Durable Objects).
+   - **Google Gemini API Key** dengan kuota aktif untuk Gemini Live API.
+
+## Attention & Catatan Penting
+
+> [!WARNING]
+> Harap perhatikan hal-hal wajib berikut sebelum perakitan dan penggunaan:
+
+1. **Wajib Terhubung ke Internet (Tidak Bisa Offline)**:
+   - Asisten ini **sepenuhnya bergantung pada cloud AI** dan **tidak bisa berjalan offline**.
+   - ESP32 wajib terhubung ke jaringan Wi-Fi 2.4 GHz dengan akses internet aktif sepanjang waktu interaksi.
+2. **Flash Pertama Wajib Menggunakan Kabel USB**:
+   - Fitur update nirkabel (ArduinoOTA) **hanya aktif setelah ESP32 berhasil ter-flash dan terhubung ke Wi-Fi lokal**.
+   - Untuk pertama kali (fresh chip), **wajib flash melalui kabel USB** menggunakan PlatformIO atau flasher serial (`esptool.py` / `nrflash`).
+3. **Offset Flash Firmware (Cegah Board Brick)**:
+   - Jika flashing biner pabrik gabungan (`firmware.factory.bin`), tulis di offset `0x0`.
+   - Jika flashing biner aplikasi saja (`firmware.bin`), tulis di offset `0x10000`.
+4. **Konfigurasi Cloudflare Worker**:
+   - Deploy worker dari folder `cloudflare/` via `npx wrangler deploy`.
+   - Masukkan secret API key: `npx wrangler secret put GEMINI_API_KEY`.
+   - Sesuaikan hostname `websocket_server` di `firmware/src/nova.ino` dengan domain worker Anda sebelum kompilasi.
+
 ## Lisensi & Atribusi
 
 Proyek ini dilisensikan di bawah **MIT License**.
