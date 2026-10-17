@@ -3,9 +3,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# Environment variables & secrets
+# Secrets & config
 .env
 *.env.local
+secrets.h
 
 # PlatformIO build artifacts & libraries cache
 .pio/

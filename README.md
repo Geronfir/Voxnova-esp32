@@ -1,41 +1,63 @@
-# Nova AI - Voice Assistant ESP32-S3
+# nova-esp32-bridge
 
-Proyek asisten suara berbasis **ESP32-S3 (N16R8)** dengan mikrofon I2S (INMP441) dan amplifier speaker I2S (MAX98357A), terhubung via WebSocket ke server AI.
+> Standalone ESP32-S3 Voice Assistant client with Cloudflare Worker & local Python server bridges, adapted and enhanced from [Nova AI](https://github.com/parth/nova-ai) by Parth.
+
+## Ringkasan Proyek
+
+Proyek ini adalah implementasi asisten suara real-time berbasis mikrokontroler **ESP32-S3 (N16R8)**. Perangkat dapat berinteraksi dua arah secara real-time melalui Gemini Live API, baik menggunakan **Cloudflare Worker (Durable Object)** tanpa server lokal, maupun melalui **Local Python Server (FastAPI)** di jaringan lokal.
+
+## Arsitektur & Fitur Utama
+
+- **Firmware ESP32-S3 (PlatformIO)**:
+  - Audio I2S: Input mic INMP441 (16kHz 16-bit mono) & output speaker MAX98357A (24kHz).
+  - Push-to-Talk (PTT) pintar dengan buffer PSRAM 640KB dan fallback RAM internal.
+  - Streaming real-time WebSocket terenkripsi SSL/WSS.
+  - OLED visual feedback (SSD1306) & single-pixel status LED (NeoPixel GPIO48).
+  - Support Over-the-Air (ArduinoOTA) flashing.
+  - Non-blocking audio I2S loop dengan auto-timeout proteksi state "BERPIKIR" jika API kuota habis.
+- **Cloudflare Worker Bridge (`cloudflare/`)**:
+  - Berjalan di edge Cloudflare (Durable Object) tanpa perlu menjalankan komputer/HP lokal.
+  - Pacer audio ~1.5x real-time (2048B chunks) agar ring buffer hardware stabil.
+  - Manual VAD handshake (activityStart/activityEnd) via PTT_END.
+- **Local Python Server (`server/`)**:
+  - FastAPI + WebSocket bridge untuk pengujian lokal di Termux Android / PC.
 
 ## Struktur Direktori
 
 ```
-nova/
-├── firmware/         # Firmware ESP32-S3 berbasis PlatformIO
+nova-esp32-bridge/
+├── firmware/         # Firmware ESP32-S3 PlatformIO
 │   ├── platformio.ini
 │   └── src/
-│       └── nova.ino
-├── server/           # Backend server Python (FastAPI + WebSocket)
+│       ├── nova.ino
+│       └── secrets.h.example
+├── cloudflare/       # Cloudflare Worker + Durable Object bridge
+│   ├── src/
+│   │   ├── index.ts
+│   │   └── nova-do.ts
+│   ├── package.json
+│   └── wrangler.toml
+├── server/           # Backend server lokal Python (FastAPI)
 │   ├── app.py
 │   ├── requirements.txt
 │   └── .env.example
-├── legacy/           # Versi terdahulu (upstream & adaptasi awal)
-│   ├── NovaAI-upstream.ino
-│   └── NovaAI-adapted-initial.ino
-├── scripts/          # Skrip utilitas (OTA, USB probe, build runner)
-│   ├── board-info.py
-│   ├── pio-run.sh
-│   └── pio-init.sh
-└── docs/             # Dokumentasi dan aset visual
+├── legacy/           # Arsip kode awal & upstream
+├── scripts/          # Skrip utilitas flashing dan probe
+├── docs/             # Dokumentasi teknis & aset
+└── LICENSE           # Lisensi MIT (Copyright (c) 2026 Parth & kontributor)
 ```
 
-## Hardware Pinout (ESP32-S3)
+## Hardware Pinout (ESP32-S3 N16R8)
 
-- **Mikrofon (INMP441)**: WS=GPIO15, SCK=GPIO16, SD=GPIO17
-- **Speaker (MAX98357A)**: BCLK=GPIO5, LRC=GPIO6, DIN=GPIO7
-- **OLED (SSD1306 128x64)**: SDA=GPIO8, SCL=GPIO9
-- **Button (Push-to-Talk)**: GPIO18 (Active LOW)
-- **Status LED**: GPIO48 (RGB NeoPixel)
+| Komponen | Pin ESP32-S3 | Deskripsi |
+| :--- | :--- | :--- |
+| **INMP441 (Mic)** | WS: GPIO15, SCK: GPIO16, SD: GPIO17 | I2S Microphone |
+| **MAX98357A (Amp)** | BCLK: GPIO5, LRC: GPIO6, DIN: GPIO7 | I2S Audio Amp |
+| **SSD1306 (OLED)** | SDA: GPIO8, SCL: GPIO9 | Display 128x64 I2C |
+| **Push-to-Talk** | GPIO18 | Active LOW (Internal Pullup) |
+| **Status LED** | GPIO48 | Onboard WS2812 RGB |
 
-## Alur Kerja
+## Lisensi & Atribusi
 
-1. **Flash Firmware**:
-   - Via OTA: `pio run -t upload --upload-port 192.168.1.3`
-   - Via USB: `nrflash write --chip esp32s3 --offset 0x10000 firmware.bin --erase --verify`
-2. **Jalankan Server**:
-   - `python server/app.py`
+Proyek ini dilisensikan di bawah **MIT License**.
+Diadaptasi dan dikembangkan dari kode awal proyek **Nova AI** ciptaan Parth. Teks lisensi dan hak cipta asli disertakan lengkap pada berkas `LICENSE`.

@@ -10,8 +10,14 @@
 #include <WiFiClientSecure.h>
 
 // NETWORK
-const char* ssid = "Arsya";
-const char* password = "kacangair";
+#if __has_include("secrets.h")
+#include "secrets.h"
+const char* ssid = WIFI_SSID;
+const char* password = WIFI_PASS;
+#else
+const char* ssid = "YOUR_WIFI_SSID";
+const char* password = "YOUR_WIFI_PASSWORD";
+#endif
 
 const char* websocket_server = "nova-esp32.chikip.workers.dev";  // Cloudflare Worker (tanpa HP)
 const uint16_t websocket_port = 443;
